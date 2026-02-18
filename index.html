@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KDP Publisher Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script type="module" src="app.js" defer></script>
+</head>
+<body>
+  <div class="bg-accent bg-accent-a" aria-hidden="true"></div>
+  <div class="bg-accent bg-accent-b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">KDP Publisher Command Center</p>
+      <h1>Portfolio Intelligence for Self-Publishers</h1>
+    </div>
+    <div class="topbar-actions">
+      <button id="exportBackupBtn" class="btn btn-outline">Export Backup</button>
+      <label class="btn btn-outline file-label" for="importBackupInput">Import Backup</label>
+      <input id="importBackupInput" type="file" accept="application/json" hidden />
+      <button id="resetDataBtn" class="btn btn-danger" title="Delete all saved data">Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="notice" id="firstRunNotice" hidden>
+      <strong>Heads up:</strong> Your data is stored locally in your browser. Export a backup regularly.
+      <button id="dismissNoticeBtn" class="btn btn-small">Dismiss</button>
+    </section>
+
+    <section class="cards-grid" id="summaryCards">
+      <article class="card stat-card"><p>Lifetime Revenue</p><h2 id="lifetimeRevenue">$0.00</h2></article>
+      <article class="card stat-card"><p>Current Month Revenue</p><h2 id="currentMonthRevenue">$0.00</h2></article>
+      <article class="card stat-card"><p>Total Profit</p><h2 id="totalProfit">$0.00</h2></article>
+      <article class="card stat-card"><p>Portfolio ROI</p><h2 id="portfolioRoi">0%</h2></article>
+      <article class="card stat-card"><p>Best Book</p><h2 id="bestBook">-</h2></article>
+      <article class="card stat-card"><p>Best Niche</p><h2 id="bestNiche">-</h2></article>
+    </section>
+
+    <section class="layout-grid">
+      <article class="card panel-2col">
+        <div class="panel-header">
+          <div>
+            <h3>Book Portfolio Manager</h3>
+            <p>Add, edit, and manage your catalog.</p>
+          </div>
+          <button id="addBookBtn" class="btn">Add Book</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Niche</th>
+                <th>Format</th>
+                <th>Publish Date</th>
+                <th>Design Cost</th>
+                <th>Marketing Cost</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="booksTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="sub-stats" id="portfolioQuickStats"></div>
+      </article>
+
+      <article class="card panel-1col">
+        <h3>What To Do Next</h3>
+        <p>Actionable recommendations powered by your portfolio data.</p>
+        <ul id="insightsList" class="insights-list"></ul>
+      </article>
+    </section>
+
+    <section class="layout-grid">
+      <article class="card panel-1col dropzone-wrap">
+        <h3>Import KDP Report</h3>
+        <p>Drop a KDP CSV or Excel file or click to upload. Supports royalty or orders exports.</p>
+        <div id="dropzone" class="dropzone" tabindex="0">
+          <input id="csvInput" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+          <p><strong>Drop CSV/XLSX here</strong> or <button id="browseCsvBtn" class="inline-btn">browse</button></p>
+          <small id="importStatus">No file imported yet.</small>
+        </div>
+      </article>
+
+      <article class="card panel-1col">
+        <h3>Break-Even & ROI by Book</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Investment</th>
+                <th>Revenue</th>
+                <th>Profit</th>
+                <th>ROI</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="roiTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="charts-grid">
+      <article class="card">
+        <h3>Revenue Over Time</h3>
+        <canvas id="lineChart" aria-label="Revenue over time chart" role="img"></canvas>
+      </article>
+      <article class="card">
+        <h3>Revenue by Book</h3>
+        <canvas id="bookBarChart" aria-label="Revenue by book chart" role="img"></canvas>
+      </article>
+      <article class="card">
+        <h3>Revenue by Niche</h3>
+        <canvas id="nicheBarChart" aria-label="Revenue by niche chart" role="img"></canvas>
+      </article>
+    </section>
+  </main>
+
+  <dialog id="bookModal">
+    <form id="bookForm" method="dialog">
+      <h3 id="bookModalTitle">Add Book</h3>
+      <input type="hidden" id="bookId" />
+      <label>Title <input id="title" required maxlength="200" /></label>
+      <label>Series (optional) <input id="series" maxlength="120" /></label>
+      <label>Niche / Category <input id="niche" required maxlength="120" /></label>
+      <label>Format
+        <select id="format" required>
+          <option value="Paperback">Paperback</option>
+          <option value="eBook">eBook</option>
+          <option value="Hardcover">Hardcover</option>
+        </select>
+      </label>
+      <label>Publish Date <input id="publishDate" type="date" required /></label>
+      <label>Design Cost (optional) <input id="designCost" type="number" min="0" step="0.01" /></label>
+      <label>Marketing Cost (optional) <input id="marketingCost" type="number" min="0" step="0.01" /></label>
+      <menu>
+        <button type="button" id="cancelBookBtn" class="btn btn-outline">Cancel</button>
+        <button type="submit" class="btn">Save Book</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="matchModal">
+    <form id="matchForm" method="dialog">
+      <h3>Unmatched Titles Found</h3>
+      <p>Some titles in this report do not match existing books. Map them below.</p>
+      <div id="matchFields"></div>
+      <menu>
+        <button type="button" id="cancelMatchBtn" class="btn btn-outline">Cancel Import</button>
+        <button type="submit" class="btn">Continue Import</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
